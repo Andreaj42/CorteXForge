@@ -1,7 +1,6 @@
 import logging
 
 def setup_logger(name: str = "planner", level: int = logging.INFO) -> logging.Logger:
-    """Create a simple console logger."""
     logger = logging.getLogger(name)
     logger.setLevel(level)
 
