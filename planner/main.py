@@ -30,7 +30,7 @@ def main():
         nodes=nodes,
         duration=args.duration,
         image="ghcr.io/andreaj42/cortexforge:latest",
-        command="bash -lc \"/cortexlab/homes/andrea_joly/CorteXForge/forge/main.py\"",
+        command="bash -lc \"python3 /cortexlab/homes/andrea_joly/CorteXForge/forge/main.py\"",
         description="Dataset Generator",
         output_path="scenarios/scenario.yaml",
     )
