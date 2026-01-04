@@ -1,5 +1,3 @@
-import os
-import argparse
 from utils.logger import setup_logger
 from utils.parser import parse_args
 
@@ -21,5 +19,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
