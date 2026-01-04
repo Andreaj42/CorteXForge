@@ -111,7 +111,7 @@ def main():
         antenna=args.antenna,
         gain=args.gain,
     )
-    logger.info(f"SigMF written: {data_path} and {meta_path}")
+    logger.info(f"SigMF files written: {data_path} and {meta_path}")
 
 
 if __name__ == "__main__":
