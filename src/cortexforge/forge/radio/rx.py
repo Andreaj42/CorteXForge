@@ -5,7 +5,7 @@ from time import sleep
 from gnuradio import uhd
 
 from cortexforge.forge.radio.rx_recorder import RxRecorder
-from cortexforge.forge.utils.compute_baseline import compute_baseline
+from cortexforge.forge.utils.compute_baseline import check_parseval, compute_baseline
 from cortexforge.forge.utils.load_timeline import load_timeline
 from cortexforge.forge.utils.node_identity import get_node_name
 from cortexforge.forge.utils.sigmf.sigmf_annotations import (
@@ -74,6 +74,14 @@ def main(args):
     expected_size = int(args.duration * args.sample_rate) * 8
     actual_size = raw_path.stat().st_size
 
+    check_parseval(
+        path=str(raw_path),
+        sample_start=int(0.5 * args.sample_rate),
+        sample_count=100 * 16384,
+        sample_rate=args.sample_rate,
+        center_frequency=args.frequency,
+    )
+
     stats = compute_baseline(path=str(raw_path), sample_rate=args.sample_rate)
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
@@ -93,6 +101,7 @@ def main(args):
         annotations=timeline_to_sigmf_annotations(
             events=timeline,
             rx_sample_rate=args.sample_rate,
+            rx_center_frequency=args.frequency,
             rx_uhd_t0=rx_uhd_t0,
             rx_data_path=str(raw_path),
             baseline_stat=stats,
