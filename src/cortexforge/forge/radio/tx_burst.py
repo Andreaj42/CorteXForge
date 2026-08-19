@@ -1,6 +1,7 @@
+import math
+
 import numpy as np
 import pmt
-import math
 from gnuradio import gr, uhd
 
 
@@ -27,7 +28,7 @@ class BurstScheduler(gr.sync_block):
         self.bursts = []
         for ev in self.events:
             iq = ev["iq"].astype(np.complex64) * self.amp_scale
-            t0 = float(ev["t_start_s"])
+            t0 = float(ev["start_time_s"])
             self.bursts.append((t0, iq))
 
         self.cur_idx = 0
