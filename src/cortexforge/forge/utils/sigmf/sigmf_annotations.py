@@ -1,11 +1,12 @@
 import math
 
-from cortexforge.forge.utils.node_layout import distance
-from cortexforge.forge.utils.node_identity import get_node_name
 from cortexforge.forge.utils.compute_baseline import (
     MIN_LINEAR_POWER,
     measure_window_power,
+    scale_noise_power_to_band,
 )
+from cortexforge.forge.utils.node_identity import get_node_name
+from cortexforge.forge.utils.node_layout import distance
 
 
 def make_sigmf_annotations(annotations):
@@ -43,23 +44,31 @@ def timeline_to_sigmf_annotations(
 ):
     ann = []
     baseline_mean_power = None
+    baseline_bandwidth_hz = None
+
     if baseline_stat is not None:
         baseline_mean_power = float(baseline_stat.get("mean_power", 0.0))
+        baseline_bandwidth_hz = float(baseline_stat.get("bandwidth_hz", rx_sample_rate))
 
     for ev in events:
         start = int((ev["t_start_s"] - rx_uhd_t0) * rx_sample_rate)
         count = int(ev["duration_s"] * rx_sample_rate)
 
         modulation = ev["modulation"].upper()
-        bw = theoretical_bandwidth_hz(ev)
+        signal_bandwidth_hz = theoretical_bandwidth_hz(ev)
+        noise_in_band_mean_power = scale_noise_power_to_band(
+            full_band_noise_power=baseline_mean_power,
+            full_bandwidth_hz=baseline_bandwidth_hz,
+            target_bandwidth_hz=signal_bandwidth_hz,
+        )
         f0 = tx_center_freq
 
         if modulation in {"AM-SSB", "AM-SSB-WC", "AM-SSB-SC"}:
             f_low = f0
-            f_high = f0 + bw
+            f_high = f0 + signal_bandwidth_hz
         else:
-            f_low = f0 - bw / 2.0
-            f_high = f0 + bw / 2.0
+            f_low = f0 - signal_bandwidth_hz / 2.0
+            f_high = f0 + signal_bandwidth_hz / 2.0
 
         annotation = {
             "core:sample_start": start,
@@ -88,18 +97,20 @@ def timeline_to_sigmf_annotations(
                     sample_count=count,
                 )
                 total_mean_power = burst_stats["mean_power"]
-                signal_mean_power = max(
-                    total_mean_power - baseline_mean_power, MIN_LINEAR_POWER
-                )
+                signal_mean_power = total_mean_power - baseline_mean_power
                 annotation["cortexforge:rx_total_power_dbfs"] = burst_stats[
                     "power_dbfs"
                 ]
-                annotation["cortexforge:rx_signal_power_dbfs"] = 10.0 * math.log10(
-                    signal_mean_power / 2.0
-                )
-                annotation["cortexforge:snr_db"] = 10.0 * math.log10(
-                    signal_mean_power / max(baseline_mean_power, MIN_LINEAR_POWER)
-                )
+                if signal_mean_power > 0:
+                    annotation["cortexforge:rx_signal_power_dbfs"] = 10.0 * math.log10(
+                        signal_mean_power / 2.0
+                    )
+                    annotation["cortexforge:snr_db"] = 10.0 * math.log10(
+                        signal_mean_power / max(baseline_mean_power, MIN_LINEAR_POWER)
+                    )
+                else:
+                    signal_mean_power = "Non estimable"
+
             except ValueError:
                 pass
 

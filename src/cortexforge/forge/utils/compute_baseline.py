@@ -1,12 +1,35 @@
-import numpy as np
 import math
 
+import numpy as np
 
 MIN_LINEAR_POWER = np.finfo(np.float32).tiny
 
 
 def _dbfs_from_mean_power(mean_power):
     return 10.0 * math.log10(max(float(mean_power), MIN_LINEAR_POWER) / 2.0)
+
+
+def scale_noise_power_to_band(
+    full_band_noise_power,
+    full_bandwidth_hz,
+    target_bandwidth_hz,
+):
+    """
+    Scale a full-band noise power to a target bandwidth.
+
+    For white noise:
+
+        P_noise(B) = N0 * B
+
+    therefore:
+        P_noise_target
+            = P_noise_full * B_target / B_full
+    """
+    full_band_noise_power = float(full_band_noise_power)
+    full_bandwidth_hz = float(full_bandwidth_hz)
+    target_bandwidth_hz = float(target_bandwidth_hz)
+
+    return full_band_noise_power * target_bandwidth_hz / full_bandwidth_hz
 
 
 def measure_window_power(path, sample_start, sample_count):
@@ -62,10 +85,13 @@ def compute_baseline(path, sample_rate, skip=0.5, win_size=1.0):
     stats = measure_window_power(
         path, sample_start=skip_samples, sample_count=win_samples
     )
+    noise_psd = stats["mean_power"] / float(sample_rate)
 
     return {
         "skip_samples": skip_samples,
         "win_samples": stats["sample_count"],
         "mean_power": stats["mean_power"],
         "power_dbfs": stats["power_dbfs"],
+        "bandwidth_hz": float(sample_rate),
+        "noise_psd": noise_psd,
     }

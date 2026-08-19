@@ -34,6 +34,7 @@ def configure_parser(parser: ArgumentParser) -> ArgumentParser:
     parser.add_argument(
         "--duration", type=int, default=60, help="Experiment duration in seconds"
     )
+    parser.add_argument("--rx-node", type=str, default=None, help="Receiver node")
     parser.add_argument(
         "--rx-frequency", type=int, default=2450000000, help="Receiver frequency"
     )
@@ -72,6 +73,12 @@ def configure_parser(parser: ArgumentParser) -> ArgumentParser:
             "Use a space-separated list or comma-separated values. "
             "Defaults to all planner modulations."
         ),
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Random seed for reproducibility",
     )
     return parser
 

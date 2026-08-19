@@ -20,9 +20,8 @@ def run(args) -> None:
         modulations=args.modulations,
         warmup_time=2.0,
     )
-
     df = scenario.generate_table(
-        n_signals=args.n_signals, allow_overlap=args.overlapping, seed=42
+        n_signals=args.n_signals, allow_overlap=args.overlapping, seed=args.seed
     )
     print(df.head())
 
@@ -30,7 +29,7 @@ def run(args) -> None:
         "configs/timeline.csv",
         n_signals=args.n_signals,
         allow_overlap=args.overlapping,
-        seed=42,
+        seed=args.seed,
     )
 
     generate_cortexlab_scenario(

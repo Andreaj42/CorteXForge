@@ -24,7 +24,7 @@ class ExperimentScenario:
         duration: float,
         rx_sample_rate: int,
         warmup_time: float = 2.0,
-        amplitude_range: tuple[float, float] = (0.05, 0.2),
+        amplitude_range: tuple[float, float] = (0.2, 1.0),
         modulations: List[str] | None = None,
         min_burst_gap_s: float = 0.010,
     ):
