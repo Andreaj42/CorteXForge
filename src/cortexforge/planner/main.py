@@ -52,7 +52,9 @@ def run(args) -> None:
         tx_command=(
             f'bash -lc "cortexforge forge tx '
             f"--timeline /cortexlab/homes/{args.username}/timeline.csv "
-            f'--record-node {nodes[0]}"'
+            f"--record-node {nodes[0]} "
+            f"--gain {args.tx_gain} "
+            f'--frequency {args.tx_frequency}"'
         ),
         description="Dataset Generator",
         output_path="configs/scenario.yaml",
