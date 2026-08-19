@@ -109,7 +109,8 @@ def timeline_to_sigmf_annotations(
                         signal_mean_power / max(baseline_mean_power, MIN_LINEAR_POWER)
                     )
                 else:
-                    signal_mean_power = "Non estimable"
+                    annotation["cortexforge:rx_signal_power_dbfs"] = "Non estimable"
+                    annotation["cortexforge:snr_db"] = "Non estimable"
 
             except ValueError:
                 pass
