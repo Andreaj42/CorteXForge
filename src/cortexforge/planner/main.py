@@ -21,7 +21,11 @@ def run(args) -> None:
         warmup_time=2.0,
     )
     df = scenario.generate_table(
-        n_signals=args.n_signals, allow_overlap=args.overlapping, seed=args.seed
+        n_signals=args.n_signals,
+        tx_gain=args.tx_gain,
+        tx_frequency=args.tx_frequency,
+        allow_overlap=args.overlapping,
+        seed=args.seed,
     )
     print(df.head())
 
@@ -48,9 +52,7 @@ def run(args) -> None:
         tx_command=(
             f'bash -lc "cortexforge forge tx '
             f"--timeline /cortexlab/homes/{args.username}/timeline.csv "
-            f"--record-node {nodes[0]} "
-            f"--frequency {args.rx_frequency} "
-            f'--gain {args.rx_gain}"'
+            f"--record-node {nodes[0]}"
         ),
         description="Dataset Generator",
         output_path="configs/scenario.yaml",

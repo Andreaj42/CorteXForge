@@ -42,6 +42,10 @@ def configure_parser(parser: ArgumentParser) -> ArgumentParser:
     parser.add_argument(
         "--rx-sample-rate", type=int, default=250000, help="Receiver sample-rate"
     )
+    parser.add_argument("--tx-gain", type=int, default=30, help="Transmitter gain")
+    parser.add_argument(
+        "--tx-frequency", type=int, default=2450000000, help="Transmitter frequency"
+    )
     parser.add_argument(
         "--overlapping",
         action="store_true",

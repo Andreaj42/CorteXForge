@@ -146,6 +146,8 @@ class ExperimentScenario:
     def generate_table(
         self,
         n_signals: int = 288,
+        tx_gain: int = 30,
+        tx_frequency: int = 2450000000,
         allow_overlap: bool = False,
         seed: int | None = None,
     ) -> pd.DataFrame:
@@ -190,6 +192,8 @@ class ExperimentScenario:
                     "duration_s": signal_duration,
                     "modulation": signal_modulation,
                     "amplitude": signal_amplitude,
+                    "tx_gain": tx_gain,
+                    "tx_frequency": tx_frequency,
                     "roll_off": 0.35,
                     "symbol_rate": 2_500_000,
                     "sample_rate_sps": 10_000_000,
@@ -204,6 +208,8 @@ class ExperimentScenario:
                 "duration_s",
                 "modulation",
                 "amplitude",
+                "tx_gain",
+                "tx_frequency",
                 "roll_off",
                 "symbol_rate",
                 "sample_rate_sps",
@@ -216,7 +222,7 @@ class ExperimentScenario:
     def to_csv(
         self,
         output_path: str,
-        n_signals: int = 288,
+        n_signals: int = 280,
         allow_overlap: bool = False,
         seed: int | None = None,
     ):
