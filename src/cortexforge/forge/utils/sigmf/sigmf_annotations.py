@@ -37,8 +37,6 @@ def timeline_to_sigmf_annotations(
     events,
     rx_sample_rate,
     rx_uhd_t0,
-    tx_center_freq,
-    tx_gain,
     rx_data_path=None,
     baseline_stat=None,
 ):
@@ -61,7 +59,7 @@ def timeline_to_sigmf_annotations(
             full_bandwidth_hz=baseline_bandwidth_hz,
             target_bandwidth_hz=signal_bandwidth_hz,
         )
-        f0 = tx_center_freq
+        f0 = ev["tx_frequency"]
 
         if modulation in {"AM-SSB", "AM-SSB-WC", "AM-SSB-SC"}:
             f_low = f0
@@ -78,7 +76,7 @@ def timeline_to_sigmf_annotations(
             "core:label": ev["modulation"],
             "cortexforge:transmitter": ev["radio"],
             "cortexforge:distance_m": distance(ev["radio"], get_node_name()),
-            "cortexforge:tx_gain_db": tx_gain,
+            "cortexforge:tx_gain_db": ev["tx_gain"],
             "cortexforge:amplitude": ev["amplitude"],
             "cortexforge:symbol_rate": ev["symbol_rate"],
             "cortexforge:rolloff": ev["rolloff"],
@@ -87,6 +85,7 @@ def timeline_to_sigmf_annotations(
         if (
             rx_data_path is not None
             and baseline_mean_power is not None
+            and baseline_bandwidth_hz is not None
             and start >= 0
             and count > 0
         ):
@@ -98,6 +97,11 @@ def timeline_to_sigmf_annotations(
                 )
                 total_mean_power = burst_stats["mean_power"]
                 signal_mean_power = total_mean_power - baseline_mean_power
+                noise_in_band_mean_power = scale_noise_power_to_band(
+                    full_band_noise_power=baseline_mean_power,
+                    full_bandwidth_hz=baseline_bandwidth_hz,
+                    target_bandwidth_hz=signal_bandwidth_hz,
+                )
                 annotation["cortexforge:rx_total_power_dbfs"] = burst_stats[
                     "power_dbfs"
                 ]
@@ -106,7 +110,8 @@ def timeline_to_sigmf_annotations(
                         signal_mean_power / 2.0
                     )
                     annotation["cortexforge:snr_db"] = 10.0 * math.log10(
-                        signal_mean_power / max(baseline_mean_power, MIN_LINEAR_POWER)
+                        signal_mean_power
+                        / max(noise_in_band_mean_power, MIN_LINEAR_POWER)
                     )
                 else:
                     annotation["cortexforge:rx_signal_power_dbfs"] = "Non estimable"
