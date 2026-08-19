@@ -1,20 +1,20 @@
+from datetime import datetime, timezone
 from logging import getLogger
 from time import sleep
-from datetime import datetime, timezone
+
 from gnuradio import uhd
 
 from cortexforge.forge.radio.rx_recorder import RxRecorder
-from cortexforge.forge.utils.sigmf_writer import write_sigmf
 from cortexforge.forge.utils.compute_baseline import compute_baseline
 from cortexforge.forge.utils.load_timeline import load_timeline
-from cortexforge.forge.utils.sync_barrier.rx_barrier_server import RxBarrierServer
-from cortexforge.forge.utils.sync_barrier.sync_config import SyncConfig
-from cortexforge.forge.utils.uhd_time import arm_time_reset_next_pps
+from cortexforge.forge.utils.node_identity import get_node_name
 from cortexforge.forge.utils.sigmf.sigmf_annotations import (
     timeline_to_sigmf_annotations,
 )
-from cortexforge.forge.utils.node_identity import get_node_name
-
+from cortexforge.forge.utils.sigmf_writer import write_sigmf
+from cortexforge.forge.utils.sync_barrier.rx_barrier_server import RxBarrierServer
+from cortexforge.forge.utils.sync_barrier.sync_config import SyncConfig
+from cortexforge.forge.utils.uhd_time import arm_time_reset_next_pps
 
 logger = getLogger(__name__)
 
@@ -88,14 +88,12 @@ def main(args):
         center_freq=args.frequency,
         hardware=tb.src.get_usrp_info().get("mboard_id"),
         author="Andrea Joly",
-        description="CorteXForge recording",
+        description="CorteXforge recording",
         gain=args.gain,
         annotations=timeline_to_sigmf_annotations(
             events=timeline,
             rx_sample_rate=args.sample_rate,
             rx_uhd_t0=rx_uhd_t0,
-            tx_center_freq=args.frequency,
-            tx_gain=args.gain,
             rx_data_path=str(raw_path),
             baseline_stat=stats,
         ),
