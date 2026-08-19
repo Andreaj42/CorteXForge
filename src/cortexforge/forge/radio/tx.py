@@ -29,7 +29,7 @@ def main(args):
             sample_rate=ev["sample_rate_sps"],
             symbol_rate=ev["symbol_rate"],
             duration_s=ev["duration_s"],
-            rolloff=ev["rolloff"],
+            rolloff=ev["roll_off"],
             amplitude=ev["amplitude"],
         ).astype("complex64")
 
@@ -38,7 +38,7 @@ def main(args):
         events_with_iq.append(ev2)
 
         logger.info(
-            f"event start={ev['t_start_s']} dur={ev['duration_s']} "
+            f"event start={ev['start_time_s']} dur={ev['duration_s']} "
             f"modulation={ev['modulation']}"
         )
 
@@ -66,8 +66,8 @@ def main(args):
     # logger.info(f"UHD time at start: {tb.sink.get_time_now().get_real_secs():.6f} s")
 
     # 5) Attendre jusqu’à la fin du dernier burst
-    last_ev = max(events_with_iq, key=lambda e: e["t_start_s"] + e["duration_s"])
-    t_end = float(last_ev["t_start_s"] + last_ev["duration_s"]) + 1.0
+    last_ev = max(events_with_iq, key=lambda e: e["start_time_s"] + e["duration_s"])
+    t_end = float(last_ev["start_time_s"] + last_ev["duration_s"]) + 1.0
 
     while tb.sink.get_time_now().get_real_secs() < t_end:
         time.sleep(0.001)
