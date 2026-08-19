@@ -18,19 +18,17 @@ def load_timeline(path: str) -> List[Dict[str, Any]]:
         for row in reader:
             event = {
                 "radio": row["radio"],
-                "t_start_s": float(row["start_time"]),
+                "start_time_s": float(row["start_time"]),
                 "duration_s": float(row["duration_s"]),
                 "sample_rate_sps": int(row["sample_rate_sps"]),
+                "tx_frequency": int(row["tx_frequency"]),
+                "tx_gain": float(row["tx_gain"]),
                 "amplitude": float(row["amplitude"]),
                 "modulation": row["modulation"],
                 "symbol_rate": float(row["symbol_rate"]),
-                "rolloff": float(row["roll_off"]),
+                "roll_off": float(row["roll_off"]),
             }
-            if row.get("freq_hz") not in (None, ""):
-                event["freq_hz"] = int(row["freq_hz"])
-            if row.get("tx_gain_db") not in (None, ""):
-                event["tx_gain_db"] = float(row["tx_gain_db"])
             events.append(event)
 
-    events.sort(key=lambda e: e["t_start_s"])
+    events.sort(key=lambda e: e["start_time_s"])
     return events

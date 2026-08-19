@@ -16,7 +16,7 @@ def make_sigmf_annotations(annotations):
 def theoretical_bandwidth_hz(ev):
     modulation = ev["modulation"].upper()
     symbol_rate = float(ev["symbol_rate"])
-    rolloff = float(ev["rolloff"])
+    rolloff = float(ev["roll_off"])
 
     # Default occupied RF bandwidth.
     bw = (1.0 + rolloff) * symbol_rate
@@ -49,7 +49,7 @@ def timeline_to_sigmf_annotations(
         baseline_bandwidth_hz = float(baseline_stat.get("bandwidth_hz", rx_sample_rate))
 
     for ev in events:
-        start = int((ev["t_start_s"] - rx_uhd_t0) * rx_sample_rate)
+        start = int((ev["start_time_s"] - rx_uhd_t0) * rx_sample_rate)
         count = int(ev["duration_s"] * rx_sample_rate)
 
         modulation = ev["modulation"].upper()
@@ -79,7 +79,7 @@ def timeline_to_sigmf_annotations(
             "cortexforge:tx_gain_db": ev["tx_gain"],
             "cortexforge:amplitude": ev["amplitude"],
             "cortexforge:symbol_rate": ev["symbol_rate"],
-            "cortexforge:rolloff": ev["rolloff"],
+            "cortexforge:roll_off": ev["roll_off"],
         }
 
         if (
