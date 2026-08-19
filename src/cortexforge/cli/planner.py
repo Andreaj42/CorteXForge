@@ -38,9 +38,9 @@ def configure_parser(parser: ArgumentParser) -> ArgumentParser:
     parser.add_argument(
         "--rx-frequency", type=int, default=2450000000, help="Receiver frequency"
     )
-    parser.add_argument("--rx-gain", type=int, default=10, help="Receiver gain")
+    parser.add_argument("--rx-gain", type=int, default=1, help="Receiver gain")
     parser.add_argument(
-        "--rx-sample-rate", type=int, default=250000, help="Receiver sample-rate"
+        "--rx-sample-rate", type=int, default=16666667, help="Receiver sample-rate"
     )
     parser.add_argument("--tx-gain", type=int, default=30, help="Transmitter gain")
     parser.add_argument(
