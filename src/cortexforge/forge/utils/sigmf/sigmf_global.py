@@ -5,7 +5,7 @@ def make_sigmf_global(author: str, sample_rate: float, data_path, description: s
     return {
         "core:author": author,
         "core:description": description,
-        "core:recorder": "CorteXForge",
+        "core:recorder": "CorteXforge",
         "core:datatype": "cf32_le",
         "core:sample_rate": float(sample_rate),
         "core:data_file": data_path.name,

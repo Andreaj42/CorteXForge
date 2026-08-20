@@ -15,8 +15,8 @@ def write_sigmf(
     stat,
     annotations,
     hardware: str,
-    description: str = "CorteXForge capture",
-    author: str = "CorteXForge",
+    description: str = "CorteXforge capture",
+    author: str = "CorteXforge",
 ):
     """
     base_path: path without extension
