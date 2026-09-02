@@ -1,7 +1,7 @@
 """Get node name identity."""
 
-from socket import gethostname
 from logging import getLogger
+from socket import gethostname
 
 logger = getLogger(__name__)
 

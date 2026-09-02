@@ -1,5 +1,5 @@
-from pathlib import Path
 import hashlib
+from pathlib import Path
 
 
 def _sha512_hex(path: Path, chunk_size: int = 1024 * 1024) -> str:

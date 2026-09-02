@@ -1,7 +1,9 @@
 import json
 import time
-import zmq
 from logging import getLogger
+
+import zmq
+
 from cortexforge.forge.utils.sync_barrier.sync_config import SyncConfig
 
 logger = getLogger(__name__)

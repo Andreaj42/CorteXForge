@@ -1,5 +1,6 @@
-from gnuradio import blocks, gr, uhd
 from logging import getLogger
+
+from gnuradio import blocks, gr, uhd
 
 logger = getLogger(__name__)
 
