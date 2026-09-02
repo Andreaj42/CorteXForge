@@ -48,7 +48,7 @@ def _sha256_hex(path: Path, chunk_size: int = 1024 * 1024) -> str:
     return h.hexdigest()
 
 
-def _format_size(size_bytes: int | float) -> str:
+def _format_size(size_bytes: float) -> str:
     value = float(size_bytes)
     units = ["B", "KB", "MB", "GB", "TB"]
 
@@ -193,7 +193,7 @@ def _extract_archive_with_external_zstd(archive_path: Path, root: Path) -> None:
     if decompress_process.stdout is not None:
         decompress_process.stdout.close()
 
-    tar_stdout, tar_stderr = tar_process.communicate()
+    _, tar_stderr = tar_process.communicate()
     _, decompress_stderr = decompress_process.communicate()
 
     if decompress_process.returncode != 0:
