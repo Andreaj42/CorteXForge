@@ -4,6 +4,7 @@ import numpy as np
 def rrc_taps(beta: float, sps: int, span: int) -> np.ndarray:
     """
     Root Raised Cosine taps.
+
     span: in symbols (total taps = span*sps + 1)
     """
     N = span * sps
@@ -26,8 +27,35 @@ def rrc_taps(beta: float, sps: int, span: int) -> np.ndarray:
             den = np.pi * ti * (1 - (4 * beta * ti) ** 2)
             taps[i] = num / den
 
+    # Unit-energy normalization of the pulse-shaping filter.
     taps /= np.sqrt(np.sum(taps**2) + 1e-12)
     return taps.astype(np.float32)
+
+
+def normalize_burst_rms(
+    burst: np.ndarray,
+    sps: int,
+    span_symbols: int,
+) -> np.ndarray:
+    """
+    Normalize the steady-state part of a shaped burst to unit RMS.
+
+    The transient region induced by the finite RRC filter is excluded from
+    the RMS estimate when the burst is long enough.
+    """
+    trim = int(np.ceil(span_symbols * sps / 2))
+
+    if len(burst) > 2 * trim:
+        reference = burst[trim:-trim]
+    else:
+        reference = burst
+
+    power = np.mean(np.abs(reference) ** 2)
+
+    if not np.isfinite(power) or power < 1e-12:
+        raise ValueError(f"Invalid burst power for RMS normalization: {power}")
+
+    return (burst / np.sqrt(power)).astype(np.complex64)
 
 
 def bits(rng, nbits: int) -> np.ndarray:
@@ -98,13 +126,19 @@ def _cross_qam_symbols(
 
 def _cross_32qam_symbols(b: np.ndarray) -> np.ndarray:
     return _cross_qam_symbols(
-        b, bits_per_symbol=5, grid_size=6, corner_levels_to_remove=1
+        b,
+        bits_per_symbol=5,
+        grid_size=6,
+        corner_levels_to_remove=1,
     )
 
 
 def _cross_128qam_symbols(b: np.ndarray) -> np.ndarray:
     return _cross_qam_symbols(
-        b, bits_per_symbol=7, grid_size=12, corner_levels_to_remove=2
+        b,
+        bits_per_symbol=7,
+        grid_size=12,
+        corner_levels_to_remove=2,
     )
 
 
@@ -216,6 +250,7 @@ def map_symbols(mod: str, b: np.ndarray) -> np.ndarray:
         return _cross_128qam_symbols(b)
     if mod == "256QAM":
         return _qam_symbols(b, 4, 4)
+
     raise ValueError(f"Unsupported modulation: {mod}")
 
 
@@ -228,20 +263,32 @@ def make_digital_burst(
     amplitude: float,
     span_symbols: int,
 ) -> np.ndarray:
-    sps = int(round(sample_rate / symbol_rate))
+    ratio = sample_rate / symbol_rate
+    sps = int(round(ratio))
+
     if sps < 2:
         raise ValueError(
-            f"sps too small (sample_rate/symbol_rate={sample_rate / symbol_rate:.2f}). Increase sample_rate or decrease symbol_rate."
+            f"sps too small "
+            f"(sample_rate/symbol_rate={ratio:.2f}). "
+            "Increase sample_rate or decrease symbol_rate."
+        )
+
+    if not np.isclose(ratio, sps, rtol=0.0, atol=1e-9):
+        raise ValueError(
+            f"Non-integer SPS: sample_rate={sample_rate}, "
+            f"symbol_rate={symbol_rate}, SPS={ratio:.6f}."
         )
 
     nsamp = int(round(duration_s * sample_rate))
     nsyms = int(np.ceil(nsamp / sps))
 
     rng = np.random.default_rng()
+
     if modulation in {"CPFSK", "GFSK", "GMSK"}:
         b = bits(rng, nsyms)
         symbols = (2 * b.astype(np.float32)) - 1.0
         gaussian_bt = {"GFSK": 0.35, "GMSK": 0.3}.get(modulation)
+
         return _cpfsk_like_burst(
             symbols=symbols,
             sps=sps,
@@ -274,29 +321,63 @@ def make_digital_burst(
         "128QAM_CROSS": 7,
         "256QAM": 8,
     }[modulation]
+
     b = bits(rng, nsyms * bps)
     syms = map_symbols(modulation, b)
 
+    taps = rrc_taps(rolloff, sps, span_symbols)
+
     if modulation == "OQPSK":
-        syms = syms.copy()
-        half_symbol = max(1, sps // 2)
-        i_up = np.zeros(nsyms * sps + half_symbol, dtype=np.complex64)
-        q_up = np.zeros(nsyms * sps + half_symbol, dtype=np.complex64)
+        if sps % 2 != 0:
+            raise ValueError(f"OQPSK requires an even SPS, got SPS={sps}.")
+
+        half_symbol = sps // 2
+
+        i_up = np.zeros(
+            nsyms * sps + half_symbol,
+            dtype=np.complex64,
+        )
+        q_up = np.zeros(
+            nsyms * sps + half_symbol,
+            dtype=np.complex64,
+        )
+
         i_up[: nsyms * sps : sps] = np.real(syms).astype(np.float32)
         q_up[half_symbol : half_symbol + nsyms * sps : sps] = 1j * np.imag(syms).astype(
             np.float32
         )
-        taps = rrc_taps(rolloff, sps, span_symbols)
-        shaped = np.convolve(i_up + q_up, taps.astype(np.complex64), mode="same")
+
+        shaped = np.convolve(
+            i_up + q_up,
+            taps.astype(np.complex64),
+            mode="same",
+        )
+
         burst = shaped[:nsamp]
+        burst = normalize_burst_rms(
+            burst,
+            sps=sps,
+            span_symbols=span_symbols,
+        )
         burst *= float(amplitude)
+
         return burst.astype(np.complex64)
 
     up = np.zeros(nsyms * sps, dtype=np.complex64)
     up[::sps] = syms
-    taps = rrc_taps(rolloff, sps, span_symbols)
-    shaped = np.convolve(up, taps.astype(np.complex64), mode="same")
+
+    shaped = np.convolve(
+        up,
+        taps.astype(np.complex64),
+        mode="same",
+    )
 
     burst = shaped[:nsamp]
+    burst = normalize_burst_rms(
+        burst,
+        sps=sps,
+        span_symbols=span_symbols,
+    )
     burst *= float(amplitude)
+
     return burst.astype(np.complex64)
