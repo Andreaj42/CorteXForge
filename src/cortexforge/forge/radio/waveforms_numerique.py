@@ -208,50 +208,47 @@ def _cpfsk_like_burst(
 
 
 def map_symbols(mod: str, b: np.ndarray) -> np.ndarray:
-    if mod == "OOK":
-        return _ask_symbols(b, 1)
-    if mod == "PAM4":
-        return _ask_symbols(b, 2)
-    if mod == "4ASK":
-        return _ask_symbols(b, 2)
-    if mod == "8ASK":
-        return _ask_symbols(b, 3)
-    if mod == "BPSK":
-        return _psk_symbols(b, 1)
-    if mod == "QPSK":
-        return _psk_symbols(b, 2)
-    if mod == "OQPSK":
-        return _psk_symbols(b, 2)
-    if mod == "8PSK":
-        return _psk_symbols(b, 3)
-    if mod == "16PSK":
-        return _psk_symbols(b, 4)
-    if mod == "32PSK":
-        return _psk_symbols(b, 5)
-    if mod == "16APSK":
-        return _apsk_symbols(b, (4, 12))
-    if mod == "32APSK":
-        return _apsk_symbols(b, (4, 12, 16))
-    if mod == "64APSK":
-        return _apsk_symbols(b, (4, 12, 20, 28))
-    if mod == "128APSK":
-        return _apsk_symbols(b, (8, 16, 24, 32, 48))
-    if mod == "16QAM":
-        return _qam_symbols(b, 2, 2)
-    if mod == "32QAM_RECT":
-        return _qam_symbols(b, 3, 2)
-    if mod == "32QAM_CROSS":
-        return _cross_32qam_symbols(b)
-    if mod == "64QAM":
-        return _qam_symbols(b, 3, 3)
-    if mod == "128QAM_RECT":
-        return _qam_symbols(b, 4, 3)
-    if mod == "128QAM_CROSS":
-        return _cross_128qam_symbols(b)
-    if mod == "256QAM":
-        return _qam_symbols(b, 4, 4)
-
-    raise ValueError(f"Unsupported modulation: {mod}")
+    match mod:
+        case "OOK":
+            return _ask_symbols(b, 1)
+        case "PAM4" | "4ASK":
+            return _ask_symbols(b, 2)
+        case "8ASK":
+            return _ask_symbols(b, 3)
+        case "BPSK":
+            return _psk_symbols(b, 1)
+        case "QPSK" | "OQPSK":
+            return _psk_symbols(b, 2)
+        case "8PSK":
+            return _psk_symbols(b, 3)
+        case "16PSK":
+            return _psk_symbols(b, 4)
+        case "32PSK":
+            return _psk_symbols(b, 5)
+        case "16APSK":
+            return _apsk_symbols(b, (4, 12))
+        case "32APSK":
+            return _apsk_symbols(b, (4, 12, 16))
+        case "64APSK":
+            return _apsk_symbols(b, (4, 12, 20, 28))
+        case "128APSK":
+            return _apsk_symbols(b, (8, 16, 24, 32, 48))
+        case "16QAM":
+            return _qam_symbols(b, 2, 2)
+        case "32QAM_RECT":
+            return _qam_symbols(b, 3, 2)
+        case "32QAM_CROSS":
+            return _cross_32qam_symbols(b)
+        case "64QAM":
+            return _qam_symbols(b, 3, 3)
+        case "128QAM_RECT":
+            return _qam_symbols(b, 4, 3)
+        case "128QAM_CROSS":
+            return _cross_128qam_symbols(b)
+        case "256QAM":
+            return _qam_symbols(b, 4, 4)
+        case _:
+            raise ValueError(f"Unsupported modulation: {mod}")
 
 
 def make_digital_burst(
