@@ -22,7 +22,7 @@ def validate_manifest(path: str | Path) -> None:
 
     generator = raw["generator"]
     if not isinstance(generator, dict):
-        raise ValueError("'generator' must be a dictionary")
+        raise TypeError("'generator' must be a dictionary")
 
     missing_generator = REQUIRED_GENERATOR_FIELDS - generator.keys()
     if missing_generator:
@@ -36,13 +36,13 @@ def validate_manifest(path: str | Path) -> None:
 
     for split_name, split_data in splits.items():
         if not isinstance(split_data, dict):
-            raise ValueError(f"Split '{split_name}' must be a dictionary")
+            raise TypeError(f"Split '{split_name}' must be a dictionary")
 
         if "recordings" not in split_data:
             raise ValueError(f"Split '{split_name}' is missing 'recordings'")
 
         if not isinstance(split_data["recordings"], list):
-            raise ValueError(f"Split '{split_name}' field 'recordings' must be a list")
+            raise TypeError(f"Split '{split_name}' field 'recordings' must be a list")
 
 
 def load_manifest(path: str | Path) -> DatasetManifest:
