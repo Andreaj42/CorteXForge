@@ -26,13 +26,13 @@ def _make_message(
     rolloff: float,
     span_symbols: int,
 ) -> np.ndarray:
-    sps = int(round(sample_rate / symbol_rate))
+    sps = round(sample_rate / symbol_rate)
     if sps < 2:
         raise ValueError(
             f"sps too small (sample_rate/symbol_rate={sample_rate / symbol_rate:.2f}). Increase sample_rate or decrease symbol_rate."
         )
 
-    nsamp = int(round(duration_s * sample_rate))
+    nsamp = round(duration_s * sample_rate)
     nsyms = int(np.ceil(nsamp / sps))
 
     rng = np.random.default_rng()

@@ -264,7 +264,7 @@ def make_digital_burst(
     span_symbols: int,
 ) -> np.ndarray:
     ratio = sample_rate / symbol_rate
-    sps = int(round(ratio))
+    sps = round(ratio)
 
     if sps < 2:
         raise ValueError(
@@ -279,7 +279,7 @@ def make_digital_burst(
             f"symbol_rate={symbol_rate}, SPS={ratio:.6f}."
         )
 
-    nsamp = int(round(duration_s * sample_rate))
+    nsamp = round(duration_s * sample_rate)
     nsyms = int(np.ceil(nsamp / sps))
 
     rng = np.random.default_rng()

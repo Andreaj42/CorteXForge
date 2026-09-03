@@ -37,8 +37,8 @@ class BurstScheduler(gr.sync_block):
 
     def _tag_tx_time(self, abs_offset, t0_s):
         # UHD attend tx_time = (int_secs, frac_secs)
-        int_s = int(math.floor(t0_s))
-        frac_s = float(t0_s - int_s)
+        int_s = math.floor(t0_s)
+        frac_s = t0_s - int_s
         key = pmt.intern("tx_time")
         val = pmt.make_tuple(pmt.from_long(int_s), pmt.from_double(frac_s))
         self.add_item_tag(0, abs_offset, key, val)
