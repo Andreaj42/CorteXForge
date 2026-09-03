@@ -3,7 +3,7 @@
 from argparse import Action, ArgumentParser, Namespace
 from pathlib import Path
 
-from cortexforge.planner.modulations import DEFAULT_MODULATIONS
+from cortexforge.planner.generators.modulations import DEFAULT_MODULATIONS
 
 
 def _split_modulations(value: str) -> list[str]:

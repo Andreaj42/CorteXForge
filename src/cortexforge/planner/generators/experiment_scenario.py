@@ -1,9 +1,10 @@
 import random
-from typing import List
+from itertools import product
+from typing import Sequence
 
 import pandas as pd
 
-from cortexforge.planner.modulations import DEFAULT_MODULATIONS
+from cortexforge.planner.generators.modulations import DEFAULT_MODULATIONS
 
 
 class ExperimentScenario:
@@ -20,12 +21,16 @@ class ExperimentScenario:
 
     def __init__(
         self,
-        nodes: List[str],
+        nodes: list[str],
+        rx_node: str,
         duration: float,
         rx_sample_rate: int,
-        warmup_time: float = 2.0,
-        amplitude_range: tuple[float, float] = (0.2, 1.0),
-        modulations: List[str] | None = None,
+        warmup_time: float = 4.0,
+        amplitude_range: tuple[float, float] = (0.01, 1.0),
+        modulations: list[str] | None = None,
+        symbol_rates: Sequence[float] | None = None,
+        roll_offs: Sequence[float] | None = None,
+        tx_sample_rate: int = 10_000_000,
         min_burst_gap_s: float = 0.010,
     ):
         if len(nodes) < 2:
@@ -34,31 +39,98 @@ class ExperimentScenario:
         if warmup_time >= duration:
             raise ValueError("warmup_time must be strictly less than total duration.")
 
-        min_amplitude, max_amplitude = amplitude_range
-        if not (0.01 <= min_amplitude <= max_amplitude <= 1.0):
-            raise ValueError("amplitude_range must stay within [0.01, 1.0].")
-
         if min_burst_gap_s < 0:
             raise ValueError("min_burst_gap_s must be greater than or equal to 0.")
 
         self.nodes = nodes
+        self.rx_node = rx_node
+        self.tx_nodes = [node for node in nodes if node != rx_node]
+
         self.duration = duration
         self.rx_sample_rate = rx_sample_rate
         self.warmup_time = warmup_time
         self.amplitude_range = amplitude_range
         self.min_burst_gap_s = min_burst_gap_s
-        self.rx_node = nodes[0]
-        self.tx_nodes = nodes[1:]
 
         selected_modulations = (
             DEFAULT_MODULATIONS if modulations is None else modulations
         )
         self.modulations = self._validate_modulations(selected_modulations)
 
+        self.symbol_rates = list(
+            symbol_rates
+            if symbol_rates is not None
+            else [
+                250_000,
+                312_500,
+                500_000,
+                625_000,
+                1_000_000,
+                1_250_000,
+            ]
+        )
+
+        self.roll_offs = list(
+            roll_offs
+            if roll_offs is not None
+            else [
+                0.10,
+                0.20,
+                0.35,
+                0.50,
+            ]
+        )
+
+        self.tx_sample_rate = tx_sample_rate
+
         self.duration_range_s = (0.02, 0.10)
 
+        self._validate_signal_parameters()
+
+    def _validate_signal_parameters(self) -> None:
+        if not self.symbol_rates:
+            raise ValueError("At least one symbol rate must be provided.")
+
+        if not self.roll_offs:
+            raise ValueError("At least one roll-off must be provided.")
+
+        for symbol_rate in self.symbol_rates:
+            if symbol_rate <= 0:
+                raise ValueError("Symbol rates must be strictly positive.")
+
+            sps = self.tx_sample_rate / symbol_rate
+
+            if not sps.is_integer():
+                raise ValueError(
+                    f"Invalid symbol rate {symbol_rate}: "
+                    f"tx_sample_rate / symbol_rate = {sps:.6f}. "
+                    "The waveform generator requires an integer SPS."
+                )
+
+            if sps < 2:
+                raise ValueError(
+                    f"Symbol rate {symbol_rate} gives SPS={sps:.0f}, "
+                    "which is too small."
+                )
+
+        for roll_off in self.roll_offs:
+            if not 0.0 <= roll_off <= 1.0:
+                raise ValueError("Roll-off values must belong to [0, 1].")
+
+        for symbol_rate in self.symbol_rates:
+            for roll_off in self.roll_offs:
+                nominal_bandwidth = (1.0 + roll_off) * symbol_rate
+
+                if nominal_bandwidth >= self.rx_sample_rate:
+                    raise ValueError(
+                        f"Rs={symbol_rate} and alpha={roll_off} "
+                        f"give B={nominal_bandwidth:.0f} Hz, "
+                        f"which does not fit inside "
+                        f"RX Fs={self.rx_sample_rate} Hz."
+                    )
+
     @staticmethod
-    def _validate_modulations(modulations: List[str]) -> List[str]:
+    def _validate_modulations(modulations: list[str]) -> list[str]:
         if not modulations:
             raise ValueError("At least one modulation must be provided.")
 
@@ -90,7 +162,7 @@ class ExperimentScenario:
     def _find_non_overlapping_start(
         self,
         signal_duration: float,
-        scheduled_intervals: List[tuple],
+        scheduled_intervals: list[tuple],
         rng: random.Random,
         max_attempts: int = 1000,
     ) -> float:
@@ -123,29 +195,41 @@ class ExperimentScenario:
             "reducing min_burst_gap_s, or increasing the experiment duration."
         )
 
-    def _balanced_modulation_sequence(
+    def _balanced_parameter_sequence(
         self,
         n_signals: int,
         rng: random.Random,
-    ) -> list[str]:
+    ) -> list[tuple[str, int, float]]:
         if n_signals <= 0:
             raise ValueError("n_signals must be strictly positive.")
 
-        n_modulations = len(self.modulations)
-        if n_signals % n_modulations != 0:
+        combinations = list(
+            product(
+                self.modulations,
+                self.symbol_rates,
+                self.roll_offs,
+            )
+        )
+
+        n_combinations = len(combinations)
+
+        if n_signals % n_combinations != 0:
             raise ValueError(
-                "n_signals must be a multiple of the number of selected "
-                f"modulations ({n_modulations}) to keep a balanced distribution."
+                "n_signals must be a multiple of the total number "
+                "of (modulation, symbol_rate, roll_off) combinations "
+                f"({n_combinations})."
             )
 
-        repetitions = n_signals // n_modulations
-        signal_modulations = self.modulations * repetitions
-        rng.shuffle(signal_modulations)
-        return signal_modulations
+        repetitions = n_signals // n_combinations
+
+        sequence = combinations * repetitions
+        rng.shuffle(sequence)
+
+        return sequence
 
     def generate_table(
         self,
-        n_signals: int = 288,
+        n_signals: int,
         tx_gain: int = 30,
         tx_frequency: int = 2450000000,
         allow_overlap: bool = False,
@@ -163,16 +247,15 @@ class ExperimentScenario:
         """
         rng = random.Random(seed)
 
-        signal_modulations = self._balanced_modulation_sequence(n_signals, rng)
+        signal_parameters = self._balanced_parameter_sequence(n_signals, rng)
 
         rows = []
         scheduled_intervals = []
 
-        for signal_modulation in signal_modulations:
+        for signal_modulation, signal_symbol_rate, signal_roll_off in signal_parameters:
             signal_node = rng.choice(self.tx_nodes)
             signal_duration = round(rng.uniform(*self.duration_range_s), 6)
             signal_amplitude = round(rng.uniform(*self.amplitude_range), 2)
-
             if allow_overlap:
                 signal_start_time = round(
                     rng.uniform(self.warmup_time, self.duration - signal_duration), 6
@@ -194,9 +277,9 @@ class ExperimentScenario:
                     "amplitude": signal_amplitude,
                     "tx_gain": tx_gain,
                     "tx_frequency": tx_frequency,
-                    "roll_off": 0.35,
-                    "symbol_rate": 2_500_000,
-                    "sample_rate_sps": 10_000_000,
+                    "roll_off": signal_roll_off,
+                    "symbol_rate": signal_symbol_rate,
+                    "sample_rate_sps": self.tx_sample_rate,
                 }
             )
 
@@ -222,7 +305,7 @@ class ExperimentScenario:
     def to_csv(
         self,
         output_path: str,
-        n_signals: int = 280,
+        n_signals: int,
         allow_overlap: bool = False,
         seed: int | None = None,
     ):

@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 
 def generate_cortexlab_scenario(
     nodes: list[str],
+    rx_node: str,
     duration: int,
     image: str,
     rx_command: str,
@@ -16,7 +17,6 @@ def generate_cortexlab_scenario(
     output_path: str = "scenario.yaml",
 ):
     data = {"description": description, "duration": duration, "nodes": {}}
-    rx_node = nodes[0]
     data["nodes"][rx_node.replace("mnode", "node")] = {
         "container": [
             {
@@ -25,15 +25,16 @@ def generate_cortexlab_scenario(
             }
         ]
     }
-    for node in nodes[1:]:
-        data["nodes"][node.replace("mnode", "node")] = {
-            "container": [
-                {
-                    "image": image,
-                    "command": tx_command,
-                }
-            ]
-        }
+    for node in nodes:
+        if node != rx_node:
+            data["nodes"][node.replace("mnode", "node")] = {
+                "container": [
+                    {
+                        "image": image,
+                        "command": tx_command,
+                    }
+                ]
+            }
 
     out_path = Path(output_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)

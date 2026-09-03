@@ -15,10 +15,11 @@ def run(args) -> None:
 
     scenario = ExperimentScenario(
         nodes=nodes,
+        rx_node=args.rx_node,
         duration=args.duration,
         rx_sample_rate=args.rx_sample_rate,
         modulations=args.modulations,
-        warmup_time=2.0,
+        warmup_time=4.0,
     )
     df = scenario.generate_table(
         n_signals=args.n_signals,
@@ -38,7 +39,8 @@ def run(args) -> None:
 
     generate_cortexlab_scenario(
         nodes=nodes,
-        duration=args.duration + 30,
+        rx_node=args.rx_node,
+        duration=2 * args.duration,
         image="ghcr.io/andreaj42/cortexforge:latest",
         rx_command=(
             f'bash -lc "cortexforge forge rx '
@@ -47,12 +49,12 @@ def run(args) -> None:
             f"--gain {args.rx_gain} "
             f"--sample-rate {args.rx_sample_rate} "
             f"--output-path /cortexlab/homes/{args.username}/out/ "
-            f'--timeline /cortexlab/homes/{args.username}/timeline.csv"'
+            f'--timeline /cortexlab/homes/{args.username}/cxf/timeline.csv"'
         ),
         tx_command=(
             f'bash -lc "cortexforge forge tx '
-            f"--timeline /cortexlab/homes/{args.username}/timeline.csv "
-            f"--record-node {nodes[0]} "
+            f"--timeline /cortexlab/homes/{args.username}/cxf/timeline.csv "
+            f"--record-node {args.rx_node} "
             f"--gain {args.tx_gain} "
             f'--frequency {args.tx_frequency}"'
         ),
