@@ -1,8 +1,8 @@
 import csv
-from typing import Any, Dict, List
+from typing import Any
 
 
-def load_timeline(path: str) -> List[Dict[str, Any]]:
+def load_timeline(path: str) -> list[dict[str, Any]]:
     """
     Load a TX timeline CSV file.
 
