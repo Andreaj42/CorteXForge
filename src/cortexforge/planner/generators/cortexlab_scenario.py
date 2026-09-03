@@ -1,6 +1,5 @@
 import logging
 from pathlib import Path
-from typing import List
 
 from yaml import safe_dump
 
@@ -8,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 def generate_cortexlab_scenario(
-    nodes: List[str],
+    nodes: list[str],
     duration: int,
     image: str,
     rx_command: str,
