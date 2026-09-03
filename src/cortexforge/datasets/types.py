@@ -1,11 +1,10 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List
 
 
 @dataclass(slots=True)
 class SplitManifest:
-    recordings: List[str]
+    recordings: list[str]
 
 
 @dataclass(slots=True)
@@ -21,7 +20,7 @@ class DatasetManifest:
     description: str
     format: str
     generator: GeneratorManifest
-    splits: Dict[str, SplitManifest]
+    splits: dict[str, SplitManifest]
 
 
 @dataclass(slots=True)
@@ -30,4 +29,4 @@ class LocalDataset:
     version: str
     split: str
     root: Path
-    recordings: List[Path]
+    recordings: list[Path]
